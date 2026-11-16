@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shot Guide</title>
+<style>
+:root{--bg:#0b0b0d;--fg:#f4f4f5;--mut:#a1a1aa;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:16px system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+#stage{position:relative;height:100%;overflow:hidden;background:#000}
+video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#ghost{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.35;pointer-events:none}
+.ov{position:absolute;pointer-events:none}
+#pin{width:64px;height:64px;margin:-32px 0 0 -32px;border:3px solid var(--ok);border-radius:50%;display:grid;place-items:center;font-size:30px;color:var(--ok);transition:left .1s,top .1s}
+#box{border:2px dashed var(--warn);border-radius:8px;transform:translate(-50%,-50%);font-size:12px;color:var(--warn)}
+#axis{left:0;right:0;height:0;border-top:2px dashed var(--warn)}
+#hud{position:absolute;left:0;right:0;top:0;padding:12px;display:flex;gap:12px;align-items:center;background:linear-gradient(#000a,#0000)}
+#ring{flex:none;width:56px;height:56px;border-radius:50%;display:grid;place-items:center}
+#ring b{width:44px;height:44px;border-radius:50%;background:#111;display:grid;place-items:center;font-size:18px}
+#hint{font-size:18px;font-weight:600;line-height:1.25}#chips{font-size:13px;color:var(--mut);margin-top:2px}
+.bot{position:absolute;left:0;right:0;bottom:0;padding:12px 16px 16px;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(#0000,#000c)}
+#sheet{display:block}#sheet h3{margin:0 0 8px;font-size:15px}
+.card{display:flex;gap:10px;align-items:center;background:#ffffff18;border-radius:12px;padding:8px;margin-bottom:8px}
+.card img{width:56px;height:72px;object-fit:cover;border-radius:6px}.card span{flex:1;font-size:15px;line-height:1.3}
+#shut{width:72px;height:72px;border-radius:50%;border:4px solid #fff;background:#fff3;padding:0}#shut:active{background:#fff}
+.btn{background:#ffffff22;color:var(--fg);border:0;border-radius:20px;padding:10px 14px;font:inherit;font-size:14px}
+.btn.pri{background:var(--ok);color:#000;font-weight:700}
+#thumbs{position:absolute;left:12px;bottom:110px;display:flex;gap:6px}
+#thumbs div{position:relative;width:44px;height:58px;border-radius:6px;background-size:cover;background-position:center;border:2px solid #fff6}
+#thumbs div.best{border-color:var(--warn)}#thumbs i{position:absolute;right:2px;bottom:0;font-size:11px;font-style:normal;text-shadow:0 0 3px #000}
+#intro,#view{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:28px;text-align:center;background:var(--bg)}
+#intro h1{margin:0;font-size:28px}#intro p{margin:0;color:var(--mut);max-width:330px;line-height:1.5}
+#go{background:var(--ok);color:#000;border:0;border-radius:28px;padding:16px 32px;font:inherit;font-weight:700;font-size:18px}
+#err{color:var(--bad)}#view{background:#000e;z-index:5}#view img{max-width:100%;max-height:70%;border-radius:8px}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+[hidden]{display:none!important}
+</style></head><body>
+<div id="stage">
+<video id="v" playsinline muted></video>
+<img id="ghost" alt="" hidden>
+<div class="ov" id="axis" hidden></div><div class="ov" id="box" hidden></div><div class="ov" id="pin" hidden></div>
+<div id="flash"></div>
+<div id="hud" hidden><div id="ring"><b id="sc">0</b></div><div><div id="hint"></div><div id="chips"></div></div></div>
+<div id="thumbs"></div>
+<div class="bot" id="scanbar" hidden><span id="cnt">0 spots found</span><button class="btn pri" id="done">Done scanning</button></div>
+<div class="bot" id="sheet" hidden></div>
+<div class="bot" id="bar" hidden><button class="btn" id="back">Spots</button><button id="shut" aria-label="Capture"></button><button class="btn" id="zb">Zoom</button></div>
+<div id="intro"><h1>📷 Shot Guide</h1><p>1. Slowly pan around the scene. 2. I pick the best shots I find. 3. I guide you to each one.</p><button id="go">Start camera</button><p id="err" hidden></p></div>
+<div id="view" hidden><img id="vimg" alt="Captured shot"><div id="vinfo"></div><p style="color:var(--mut);margin:0">Press and hold the photo to save it.</p><button class="btn" id="vclose">Close</button></div>
+</div>
+<script>
+const $=id=>document.getElementById(id),v=$('v'),stage=$('stage'),c=document.createElement('canvas'),x=c.getContext('2d',{willReadFrequently:true}),tc=document.createElement('canvas');
+let stream,tick,prev=null,tilt=null,hdg=null,pit=null,mode='scan',C=[],cand=null,zoomD=1,cur=0,shots=[],lastS=0;
+const clamp=(a,lo=0,hi=1)=>Math.min(hi,Math.max(lo,a)),dAng=(a,b)=>((a-b+540)%360)-180;
+function crop(){const cw=stage.clientWidth,ch=stage.clientHeight,vw=v.videoWidth,vh=v.videoHeight,s=Math.max(cw/vw,ch/vh);let sw=cw/s,sh=ch/s,sx=(vw-sw)/2,sy=(vh-sh)/2;if(zoomD>1){sx+=sw*(1-1/zoomD)/2;sy+=sh*(1-1/zoomD)/2;sw/=zoomD;sh/=zoomD}return[sx,sy,sw,sh,cw,ch]}
+function setZoom(z){zoomD=z;v.style.transform='scale('+z+')'}
+function hsv(r,g,b){const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;if(d){h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360}return[h,mx?d/mx:0,mx/255]}
+function cname(h){return h<15||h>=345?'red':h<40?'orange':h<70?'yellow':h<165?'green':h<200?'teal':h<260?'blue':h<300?'purple':'pink'}
+async function open(){
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}},audio:false})}
+ catch(e){$('err').textContent='Camera error: '+(e&&e.name||'unknown')+'. Allow camera access for this site in Safari, then tap Start again.';$('err').hidden=false;return}
+ v.srcObject=stream;await v.play();$('intro').hidden=true;setMode('scan');tick=setInterval(analyze,150);
+}
+$('go').onclick=async()=>{
+ const ps=[];for(const E of[window.DeviceOrientationEvent,window.DeviceMotionEvent])if(E&&E.requestPermission)ps.push(E.requestPermission().catch(()=>{}));await Promise.all(ps);
+ addEventListener('deviceorientation',e=>{if(e.beta==null)return;hdg=e.webkitCompassHeading!=null?e.webkitCompassHeading:e.alpha!=null?(360-e.alpha)%360:null;pit=e.beta-90});
+ addEventListener('devicemotion',e=>{const a=e.accelerationIncludingGravity;if(!a||a.x==null)return;if(Math.hypot(a.x,a.y)<4){tilt=null;return}const r=Math.atan2(a.x,a.y)*180/Math.PI;tilt=((r%90)+135)%90-45});
+ open();
+};
+function setMode(m){mode=m;$('scanbar').hidden=m!=='scan';$('sheet').hidden=m!=='pick';$('bar').hidden=m!=='guide';$('hud').hidden=m==='pick';
+ ['pin','box','axis','ghost'].forEach(i=>$(i).hidden=true);if(m!=='guide')setZoom(1);
+ if(m==='scan'){$('hint').textContent='Pan slowly. Pause on what you like.';$('chips').textContent='';$('ring').style.background='#333';$('sc').textContent='·'}}
+$('done').onclick=pick;
+$('back').onclick=pick;
+$('shut').onclick=shot;
+$('zb').onclick=()=>setZoom(zoomD>1?1:cand.zoom);
+function pick(){
+ setMode('pick');C.sort((a,b)=>b.score-a.score);const L=[],seen={};
+ C.forEach(o=>{if(!seen[o.type]){seen[o.type]=1;L.push(o)}});C.forEach(o=>{if(L.length<3&&!L.includes(o))L.push(o)});
+ const s=$('sheet');s.innerHTML='<h3>'+(L.length?'Best shots I found. Tap one:':'Nothing stood out. Try scanning again, closer to your subjects.')+'</h3>';
+ L.slice(0,3).forEach(o=>{const d=document.createElement('div');d.className='card';d.innerHTML='<img src="'+o.thumb+'" alt=""><span>'+o.label+'</span><button class="btn pri">Go</button>';d.querySelector('button').onclick=()=>{cand=o;setMode('guide');$('zb').hidden=o.zoom<1.2;$('zb').textContent='Zoom ×'+o.zoom.toFixed(1)};s.appendChild(d)});
+ const r=document.createElement('button');r.className='btn';r.textContent='Scan again';r.onclick=()=>{C=[];setMode('scan')};s.appendChild(r);
+}
+function thumb(){const[sx,sy,sw,sh]=crop();tc.width=120;tc.height=Math.round(120*sh/sw);tc.getContext('2d').drawImage(v,sx,sy,sw,sh,0,0,tc.width,tc.height);return tc.toDataURL('image/jpeg',.6)}
+function add(t){
+ t.h=hdg;t.p=pit;t.thumb=thumb();
+ const i=C.findIndex(o=>o.type===t.type&&hdg!=null&&o.h!=null&&Math.abs(dAng(o.h,hdg))<22&&Math.abs(o.p-pit)<20);
+ if(i>=0){if(C[i].score<t.score)C[i]=t}else C.push(t);
+ if(C.length>20){C.sort((a,b)=>b.score-a.score);C.length=12}
+}
+function pop(hs,W,H){
+ const n=W*H,hist=new Float32Array(12);
+ for(let i=0;i<n;i++){if(hs[i*3+1]>.15&&hs[i*3+2]>.2)hist[Math.floor(hs[i*3]/30)%12]+=hs[i*3+1]*hs[i*3+2]}
+ let dm=0;for(let k=1;k<12;k++)if(hist[k]>hist[dm])dm=k;
+ const mk=new Uint8Array(n);
+ for(let i=0;i<n;i++)if(hs[i*3+1]>.45&&hs[i*3+2]>.3){const k=Math.floor(hs[i*3]/30)%12;if(Math.min(Math.abs(k-dm),12-Math.abs(k-dm))>=2)mk[i]=1}
+ let b=null;const st=[];
+ for(let i=0;i<n;i++){if(mk[i]!==1)continue;let a=0,x0=W,x1=0,y0=H,y1=0,cs=0,sn=0,ss=0;mk[i]=2;st.push(i);
+  while(st.length){const j=st.pop(),xx=j%W,yy=(j/W)|0;a++;x0=Math.min(x0,xx);x1=Math.max(x1,xx);y0=Math.min(y0,yy);y1=Math.max(y1,yy);ss+=hs[j*3+1];cs+=Math.cos(hs[j*3]*Math.PI/180);sn+=Math.sin(hs[j*3]*Math.PI/180);
+   for(const q of[j-1,j+1,j-W,j+W])if(q>=0&&q<n&&mk[q]===1&&Math.abs(q%W-xx)<=1){mk[q]=2;st.push(q)}}
+  const f=a/n;if(f>.008&&f<.3&&(!b||a>b.a))b={a,x0,x1,y0,y1,f,s:ss/a,h:(Math.atan2(sn,cs)*180/Math.PI+360)%360}}
+ if(!b)return null;
+ const w=(b.x1-b.x0+1)/W,h=(b.y1-b.y0+1)/H,nm=cname(b.h);
+ return{type:'pop',label:'Zoom in on the '+nm+' burst of color (a flower?)',short:nm+' color',score:clamp(.45+b.s*.3+(b.f<.15?.2:0)),rect:{x:b.x0/W,y:b.y0/H,w,h},zoom:clamp(.4/Math.max(w,h),1,4)}
+}
+function refl(g,W,H){
+ let bm=99,br=0;
+ for(let r=Math.floor(H*.35);r<=Math.floor(H*.7);r+=2){const K=Math.min(r,H-r-1,Math.floor(H*.25));if(K<6)continue;let s=0,dt=0,cn=0;
+  for(let k=2;k<=K;k+=2)for(let xx=0;xx<W;xx+=3){s+=Math.abs(g[(r-k)*W+xx]-g[(r+k)*W+xx]);dt+=Math.abs(g[(r-k)*W+xx]-g[(r-k+1)*W+xx]);cn++}
+  s/=cn;dt/=cn;if(dt>4&&s<bm){bm=s;br=r}}
+ if(bm>16)return null;
+ return{type:'refl',label:'Possible reflection: get low and put the waterline mid-frame',short:'reflection',score:clamp(.5+(16-bm)/32),rect:{x:.05,y:clamp(br/H-.12,0,.76),w:.9,h:.24},zoom:1}
+}
+function analyze(){
+ if(!v.videoWidth||mode==='pick')return;
+ const[sx,sy,sw,sh,cw,ch]=crop(),W=96,H=Math.round(W*ch/cw);
+ c.width=W;c.height=H;x.drawImage(v,sx,sy,sw,sh,0,0,W,H);
+ const d=x.getImageData(0,0,W,H).data,n=W*H,g=new Float32Array(n),hs=new Float32Array(n*3);let sum=0,dk=0,br=0;
+ for(let i=0;i<n;i++){const l=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];g[i]=l;sum+=l;if(l<15)dk++;if(l>240)br++;const q=hsv(d[i*4],d[i*4+1],d[i*4+2]);hs[i*3]=q[0];hs[i*3+1]=q[1];hs[i*3+2]=q[2]}
+ const m=sum/n;let lv=0,lc=0,wx=0,wy=0,ws=0;
+ for(let yy=1;yy<H-1;yy++)for(let xx=1;xx<W-1;xx++){const i=yy*W+xx,lap=4*g[i]-g[i-1]-g[i+1]-g[i-W]-g[i+W];lv+=lap*lap;lc++;const mg=Math.abs(g[i+1]-g[i-1])+Math.abs(g[i+W]-g[i-W]);wx+=mg*mg*xx;wy+=mg*mg*yy;ws+=mg*mg}
+ lv/=lc;let md=0;if(prev&&prev.length===n){for(let i=0;i<n;i+=3)md+=Math.abs(g[i]-prev[i]);md/=n/3}prev=g;
+ const cx=ws>0?wx/ws/W:.5,cy=ws>0?wy/ws/H:.5;
+ if(mode==='scan'){
+  const L=[pop(hs,W,H),refl(g,W,H)].filter(Boolean);
+  if(!L.length&&lv>15)L.push({type:'detail',label:'Close-up on this interesting texture',short:'detail',score:.4,rect:{x:clamp(cx-.15,0,.7),y:clamp(cy-.15,0,.7),w:.3,h:.3},zoom:2});
+  const t=Date.now(),best=L.sort((a,b)=>b.score-a.score)[0],bx=$('box');
+  if(best){bx.hidden=false;bx.style.left=(best.rect.x+best.rect.w/2)*100+'%';bx.style.top=(best.rect.y+best.rect.h/2)*100+'%';bx.style.width=best.rect.w*100+'%';bx.style.height=best.rect.h*100+'%';bx.textContent=best.short}else bx.hidden=true;
+  if(md<8&&t-lastS>450){L.forEach(add);lastS=t}
+  $('cnt').textContent=C.length+' spots found';return;
+ }
+ /* guide: quality + navigation */
+ const exp=clamp(1-Math.abs(m-120)/100-(dk+br)/n*1.5),sharp=1-Math.exp(-lv/40),steady=clamp(1-md/12);
+ let bd=0,comp=.5;if(cand.type!=='refl'){let t=[1/3,1/3],q=9;for(const p of[[1/3,1/3],[2/3,1/3],[1/3,2/3],[2/3,2/3]]){const e=Math.hypot(p[0]-cx,p[1]-cy);if(e<q){q=e;t=p}}bd=q;comp=1-clamp(q/.3)}
+ const parts=[[exp,.25],[sharp,.2],[steady,.15]];if(cand.type!=='refl')parts.push([comp,.25]);if(tilt!==null)parts.push([clamp(1-Math.abs(tilt)/(cand.type==='refl'?4:8)),cand.type==='refl'?.3:.15]);
+ const score=Math.round(100*parts.reduce((a,p)=>a+p[0]*p[1],0)/parts.reduce((a,p)=>a+p[1],0));cur=score;
+ let q;
+ if(md>10)q='Hold steady';else if(m<55||dk/n>.5)q='Too dark. Find more light';else if(m>205||br/n>.4)q='Too bright. Angle away from the light';
+ else if(tilt!==null&&Math.abs(tilt)>(cand.type==='refl'?3:4))q='Level the phone ('+Math.abs(tilt).toFixed(0)+'° off)';
+ else if(sharp<.3)q='Soft focus. Hold still or move closer';else q=score>=75?'Great frame. Capture it!':'Almost there';
+ const rc=cand.rect,ccx=rc.x+rc.w/2,ccy=rc.y+rc.h/2,pin=$('pin'),bx=$('box'),ax=$('axis'),gh=$('ghost');
+ let hint,nav=null;
+ if(hdg!=null&&cand.h!=null){const dH=dAng(cand.h+(ccx-.5)*45,hdg),dP=cand.p-(ccy-.5)*60-pit,fw=45/zoomD,fh=60/zoomD;nav={dH,dP,sx:.5+dH/fw,sy:.5-dP/fh,ok:Math.abs(dH)<6&&Math.abs(dP)<8}}
+ gh.hidden=!!nav;if(!nav){gh.src=cand.thumb;hint='Line the live view up with the faded photo of the '+cand.short}
+ else{
+  const px=clamp(nav.sx,.07,.93),py=clamp(nav.sy,.14,.86),off=px!==nav.sx||py!==nav.sy;
+  pin.hidden=false;pin.style.left=px*100+'%';pin.style.top=py*100+'%';pin.style.borderColor=nav.ok?'var(--ok)':'var(--warn)';pin.style.color=pin.style.borderColor;
+  pin.textContent=off?'➤':'';pin.style.transform=off?'rotate('+(Math.atan2(nav.sx-.5,-(nav.sy-.5))*180/Math.PI-90)+'deg)':'none';
+  ax.hidden=!(cand.type==='refl'&&!off);if(!ax.hidden)ax.style.top=py*100+'%';
+  bx.hidden=!(nav.ok&&cand.zoom>zoomD*1.15);if(!bx.hidden){bx.style.left=px*100+'%';bx.style.top=py*100+'%';bx.style.width=100*zoomD/cand.zoom+'%';bx.style.height=100*zoomD/cand.zoom+'%';bx.textContent='zoom in to here'}
+  if(!nav.ok){hint=Math.abs(nav.dH)*1.3>Math.abs(nav.dP)?'Turn '+(nav.dH>0?'right':'left')+' toward the '+cand.short:'Tilt '+(nav.dP>0?'up':'down')+' toward the '+cand.short}
+  else hint=cand.zoom>zoomD*1.15?'Zoom in ~'+cand.zoom.toFixed(1)+'× on the '+cand.short:cand.type==='refl'?'Crouch low, level the phone, waterline mid-frame':q;
+  if(nav.ok&&md>10)hint=q;
+ }
+ const col=score>=75?'var(--ok)':score>=50?'var(--warn)':'var(--bad)';
+ $('ring').style.background='conic-gradient('+col+' '+score*3.6+'deg,#333 0)';$('sc').textContent=score;$('hint').textContent=hint;
+ $('chips').textContent='Light '+Math.round(exp*100)+' · Sharp '+Math.round(sharp*100)+(cand.type!=='refl'?' · Frame '+Math.round(comp*100):'')+(tilt!==null?' · Level '+(Math.abs(tilt)<=2?'✓':Math.abs(tilt).toFixed(0)+'°'):'');
+}
+function shot(){
+ if(!v.videoWidth)return;
+ const[sx,sy,sw,sh]=crop(),k=Math.min(1,1920/sw),o=document.createElement('canvas');o.width=sw*k;o.height=sh*k;
+ o.getContext('2d').drawImage(v,sx,sy,sw,sh,0,0,o.width,o.height);const s=cur;
+ o.toBlob(b=>{shots.push({u:URL.createObjectURL(b),s});render()},'image/jpeg',.92);
+ const f=$('flash');f.style.transition='none';f.style.opacity=.8;requestAnimationFrame(()=>{f.style.transition='opacity .35s';f.style.opacity=0});
+}
+function render(){
+ const best=Math.max(...shots.map(s=>s.s)),box=$('thumbs');box.innerHTML='';
+ shots.slice(-5).forEach(s=>{const d=document.createElement('div');d.style.backgroundImage='url('+s.u+')';if(s.s===best)d.className='best';
+  d.innerHTML='<i>'+(s.s===best?'★ ':'')+s.s+'</i>';d.onclick=()=>{$('vimg').src=s.u;$('vinfo').textContent='Score '+s.s;$('view').hidden=false};box.appendChild(d)});
+}
+$('vclose').onclick=()=>$('view').hidden=true;
+</script></body></html>
