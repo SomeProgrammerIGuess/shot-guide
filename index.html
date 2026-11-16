@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shot Guide</title>
+<style>
+:root{--bg:#000;--fg:#f4f1ea;--mut:#8d8a84;--ok:#f5d442;--warn:#ffffff;--bad:#ff6b5e;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:16px -apple-system,"SF Pro Text",system-ui,"Segoe UI",sans-serif;overflow:hidden}
+#app{position:relative;display:flex;flex-direction:column;height:100%}
+#top{flex:none;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
+.pill{background:#1f1f21;border-radius:10px;padding:6px 10px;font-size:13px;font-weight:600;letter-spacing:.2px}
+.brand{font-size:13px;color:var(--mut);letter-spacing:1.5px;text-transform:uppercase}
+.icn{width:38px;height:38px;border-radius:50%;border:0;background:#1f1f21;color:var(--ok);font-size:19px;padding:0}
+.icn.big{width:52px;height:52px;color:#fff;font-size:20px}
+#stage{position:relative;flex:1;min-height:0;margin:0 8px;border-radius:26px;overflow:hidden;background:#111}
+#stage::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.18;background:linear-gradient(#fff,#fff) 33.33% 0/1px 100% no-repeat,linear-gradient(#fff,#fff) 66.66% 0/1px 100% no-repeat,linear-gradient(#fff,#fff) 0 33.33%/100% 1px no-repeat,linear-gradient(#fff,#fff) 0 66.66%/100% 1px no-repeat}
+video,#ghost{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#ghost{opacity:.35;pointer-events:none}
+.ov{position:absolute;pointer-events:none}
+#pin{width:58px;height:58px;margin:-29px 0 0 -29px;border:3px solid var(--ok);border-radius:50%;display:grid;place-items:center;font-size:28px;color:var(--ok);box-shadow:0 0 16px #f5d44288;transition:left .1s,top .1s}
+#box{border:3px solid var(--ok);border-radius:20px;transform:translate(-50%,-50%);box-shadow:0 0 0 2000px rgba(0,0,0,.28),0 0 16px #f5d44299;font-size:12px;font-weight:700;color:var(--ok);padding:7px 10px;box-sizing:border-box}
+#axis{left:0;right:0;height:0;border-top:2px solid var(--ok);box-shadow:0 0 10px #f5d44288}
+#hud{position:absolute;right:12px;top:12px}
+#ring{width:46px;height:46px;border-radius:50%;display:grid;place-items:center}
+#ring b{width:36px;height:36px;border-radius:50%;background:#000b;display:grid;place-items:center;font-size:15px}
+#cap{flex:none;text-align:center;padding:12px 18px 4px;min-height:50px}
+#hint{color:var(--ok);font-size:17px;font-weight:600;line-height:1.25}#chips{color:var(--mut);font-size:12px;margin-top:4px;min-height:14px}
+#lens{flex:none;display:flex;justify-content:center;gap:12px;padding:6px 0}
+.lens{width:40px;height:40px;border-radius:50%;border:0;background:#242426;color:#fff;font:600 13px inherit;padding:0}.lens.on{background:var(--ok);color:#000}
+.ctrl{flex:none;height:92px;display:flex;align-items:center;justify-content:space-between;padding:0 28px 6px}
+#shut{width:78px;height:78px;border-radius:50%;border:4px solid #fff;background:transparent;padding:3px;display:grid;place-items:center}
+#shut i{width:100%;height:100%;border-radius:50%;background:#fff;transition:transform .08s}#shut:active i{transform:scale(.85)}
+#thumbs{position:relative;width:52px;height:52px}
+#thumbs div{position:absolute;inset:0;border-radius:12px;background-size:cover;background-position:center;border:2px solid #ffffff55}
+#thumbs div.best{border-color:var(--ok)}#thumbs i{position:absolute;right:3px;bottom:1px;font-size:11px;font-weight:700;font-style:normal;text-shadow:0 0 3px #000}
+#cnt{color:var(--mut);font-size:14px}
+.btn{background:#242426;color:var(--fg);border:0;border-radius:22px;padding:11px 18px;font:600 15px inherit}.btn.pri{background:var(--ok);color:#000}
+#sheet{position:absolute;left:0;right:0;bottom:0;padding:16px 14px calc(14px + env(safe-area-inset-bottom,0px));background:rgba(12,12,13,.94);backdrop-filter:blur(18px);border-radius:26px 26px 0 0;z-index:4}
+#sheet h3{margin:0 0 12px;font-size:15px;font-weight:600;color:var(--mut)}
+.card{display:flex;gap:12px;align-items:center;background:#1c1c1e;border-radius:18px;padding:10px;margin-bottom:8px}
+.card img{width:60px;height:76px;object-fit:cover;border-radius:12px}.card span{flex:1;font-size:15px;line-height:1.3}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#intro{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:32px 28px;background:#ebe6db;color:#171717}
+.kick{display:flex;align-items:center;gap:12px;font-size:11px;letter-spacing:2px;color:#777}.kick hr{flex:1;border:0;border-top:1px solid #bbb;margin:0}
+#intro h1{margin:0;font:400 58px/1 "Iowan Old Style","Palatino Linotype",Georgia,serif;letter-spacing:-1.5px}#intro h1 em{font-style:italic}
+#intro p{margin:0;font-size:18px;line-height:1.4;color:#444;max-width:340px}#intro p.note{font-size:13px;color:#777}
+#go{background:#171717;color:#f4ecd9;border:0;border-radius:30px;padding:17px 30px;font:600 17px inherit;align-self:flex-start}
+#err{color:#b3261e!important}
+#view{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:28px;text-align:center;background:#000e}
+#view img{max-width:100%;max-height:70%;border-radius:14px}
+[hidden]{display:none!important}
+</style></head><body>
+<div id="app">
+<div id="top"><span class="pill" id="st">3:4 · AI</span><span class="brand">Shot Guide</span><button class="icn" id="spark" aria-label="Scan again">✦</button></div>
+<div id="stage">
+<video id="v" playsinline muted></video><img id="ghost" alt="" hidden>
+<div class="ov" id="axis" hidden></div><div class="ov" id="box" hidden></div><div class="ov" id="pin" hidden></div>
+<div id="flash"></div><div id="hud" hidden><div id="ring"><b id="sc">0</b></div></div>
+</div>
+<div id="cap"><div id="hint"></div><div id="chips"></div></div>
+<div id="lens" hidden><button class="lens on" id="z1">1×</button><button class="lens" id="zb">2×</button></div>
+<div class="ctrl" id="bar" hidden><div id="thumbs"></div><button id="shut" aria-label="Capture"><i></i></button><button class="icn big" id="back" aria-label="Back to spots">☰</button></div>
+<div class="ctrl" id="scanbar" hidden><span id="cnt">0 spots found</span><button class="btn pri" id="done">Done scanning</button></div>
+<div id="sheet" hidden></div>
+</div>
+<div id="intro"><div class="kick"><span>01</span><hr><span>SCAN</span></div><h1>It finds<br>the <em>frame.</em></h1><p>Pan around the scene. It spots the best shots and tells you where to move.</p><button id="go">Start camera</button><p class="note">First launch downloads a ~150 MB AI model (Wi-Fi recommended), then it’s cached.</p><p id="err" hidden></p></div>
+<div id="view" hidden><img id="vimg" alt="Captured shot"><div id="vinfo"></div><p style="color:#8d8a84;margin:0">Press and hold the photo to save it.</p><button class="btn" id="vclose">Close</button></div>
+<script>
+const $=id=>document.getElementById(id),v=$('v'),stage=$('stage'),c=document.createElement('canvas'),x=c.getContext('2d',{willReadFrequently:true}),tc=document.createElement('canvas');
+let stream,tick,prev=null,tilt=null,hdg=null,pit=null,mode='scan',C=[],cand=null,zoomD=1,cur=0,shots=[],lastS=0,AI=null,aiErr='',aiBusy=false,aiLast=0,aiNow=null,dlMB=0,gCx=.5,gCy=.5,gPop=null,gRef=null;
+const clamp=(a,lo=0,hi=1)=>Math.min(hi,Math.max(lo,a)),dAng=(a,b)=>((a-b+540)%360)-180;
+function crop(){const cw=stage.clientWidth,ch=stage.clientHeight,vw=v.videoWidth,vh=v.videoHeight,s=Math.max(cw/vw,ch/vh);let sw=cw/s,sh=ch/s,sx=(vw-sw)/2,sy=(vh-sh)/2;if(zoomD>1){sx+=sw*(1-1/zoomD)/2;sy+=sh*(1-1/zoomD)/2;sw/=zoomD;sh/=zoomD}return[sx,sy,sw,sh,cw,ch]}
+function setZoom(z){zoomD=z;v.style.transform='scale('+z+')';$('z1').classList.toggle('on',z<=1);$('zb').classList.toggle('on',z>1)}
+function hsv(r,g,b){const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;if(d){h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360}return[h,mx?d/mx:0,mx/255]}
+function cname(h){return h<15||h>=345?'red':h<40?'orange':h<70?'yellow':h<165?'green':h<200?'teal':h<260?'blue':h<300?'purple':'pink'}
+async function open(){
+ try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}},audio:false})}
+ catch(e){$('err').textContent='Camera error: '+(e&&e.name||'unknown')+'. Allow camera access for this site in Safari, then tap Start again.';$('err').hidden=false;return}
+ v.srcObject=stream;await v.play();$('intro').hidden=true;setMode('scan');tick=setInterval(analyze,150);
+}
+$('go').onclick=async()=>{
+ const ps=[];for(const E of[window.DeviceOrientationEvent,window.DeviceMotionEvent])if(E&&E.requestPermission)ps.push(E.requestPermission().catch(()=>{}));await Promise.all(ps);
+ addEventListener('deviceorientation',e=>{if(e.beta==null)return;hdg=e.webkitCompassHeading!=null?e.webkitCompassHeading:e.alpha!=null?(360-e.alpha)%360:null;pit=e.beta-90});
+ addEventListener('devicemotion',e=>{const a=e.accelerationIncludingGravity;if(!a||a.x==null)return;if(Math.hypot(a.x,a.y)<4){tilt=null;return}const r=Math.atan2(a.x,a.y)*180/Math.PI;tilt=((r%90)+135)%90-45});
+ loadAI();open();
+};
+function setMode(m){mode=m;$('scanbar').hidden=m!=='scan';$('sheet').hidden=m!=='pick';$('bar').hidden=m!=='guide';$('hud').hidden=m!=='guide';$('cap').hidden=m==='pick';$('lens').hidden=m!=='guide';
+ ['pin','box','axis','ghost'].forEach(i=>$(i).hidden=true);if(m!=='guide')setZoom(1);
+ if(m==='scan'){$('hint').textContent='Pan slowly. Pause on what you like.';$('chips').textContent='';$('ring').style.background='#333';$('sc').textContent='·'}}
+$('done').onclick=pick;
+$('back').onclick=pick;
+$('shut').onclick=shot;
+$('zb').onclick=()=>setZoom(cand.zoom);$('z1').onclick=()=>setZoom(1);$('spark').onclick=()=>{if(stream&&mode!=='scan'){C=[];setMode('scan')}};setInterval(()=>$('st').textContent=AI?'3:4 · AI ready':aiErr?'3:4 · basic':'AI '+dlMB+' MB',500);
+function pick(){
+ setMode('pick');C.sort((a,b)=>b.score-a.score);const L=[],seen={};
+ C.forEach(o=>{if(!seen[o.short]){seen[o.short]=1;L.push(o)}});C.forEach(o=>{if(L.length<3&&!L.includes(o))L.push(o)});
+ const s=$('sheet');s.innerHTML='<h3>'+(L.length?'Best shots I found. Tap one:':'Nothing stood out. Try scanning again, closer to your subjects.')+'</h3>';
+ L.slice(0,3).forEach(o=>{const d=document.createElement('div');d.className='card';d.innerHTML='<img src="'+o.thumb+'" alt=""><span>'+o.label+'</span><button class="btn pri">Go</button>';d.querySelector('button').onclick=()=>{cand=o;setMode('guide');$('zb').hidden=o.zoom<1.2;$('zb').textContent=o.zoom.toFixed(1)+'×'};s.appendChild(d)});
+ const r=document.createElement('button');r.className='btn';r.textContent='Scan again';r.onclick=()=>{C=[];setMode('scan')};s.appendChild(r);
+}
+function thumb(){const[sx,sy,sw,sh]=crop();tc.width=120;tc.height=Math.round(120*sh/sw);tc.getContext('2d').drawImage(v,sx,sy,sw,sh,0,0,tc.width,tc.height);return tc.toDataURL('image/jpeg',.6)}
+function add(t,h0=hdg,p0=pit,th=null){
+ t.h=h0;t.p=p0;t.thumb=th||thumb();
+ const i=C.findIndex(o=>o.short===t.short&&h0!=null&&o.h!=null&&Math.abs(dAng(o.h,h0))<22&&Math.abs(o.p-p0)<20);
+ if(i>=0){if(C[i].score<t.score)C[i]=t}else C.push(t);
+ if(C.length>20){C.sort((a,b)=>b.score-a.score);C.length=12}
+}
+function pop(hs,W,H){
+ const n=W*H,hist=new Float32Array(12);
+ for(let i=0;i<n;i++){if(hs[i*3+1]>.15&&hs[i*3+2]>.2)hist[Math.floor(hs[i*3]/30)%12]+=hs[i*3+1]*hs[i*3+2]}
+ let dm=0;for(let k=1;k<12;k++)if(hist[k]>hist[dm])dm=k;
+ const mk=new Uint8Array(n);
+ for(let i=0;i<n;i++)if(hs[i*3+1]>.45&&hs[i*3+2]>.3){const k=Math.floor(hs[i*3]/30)%12;if(Math.min(Math.abs(k-dm),12-Math.abs(k-dm))>=2)mk[i]=1}
+ let b=null;const st=[];
+ for(let i=0;i<n;i++){if(mk[i]!==1)continue;let a=0,x0=W,x1=0,y0=H,y1=0,cs=0,sn=0,ss=0;mk[i]=2;st.push(i);
+  while(st.length){const j=st.pop(),xx=j%W,yy=(j/W)|0;a++;x0=Math.min(x0,xx);x1=Math.max(x1,xx);y0=Math.min(y0,yy);y1=Math.max(y1,yy);ss+=hs[j*3+1];cs+=Math.cos(hs[j*3]*Math.PI/180);sn+=Math.sin(hs[j*3]*Math.PI/180);
+   for(const q of[j-1,j+1,j-W,j+W])if(q>=0&&q<n&&mk[q]===1&&Math.abs(q%W-xx)<=1){mk[q]=2;st.push(q)}}
+  const f=a/n;if(f>.008&&f<.3&&(!b||a>b.a))b={a,x0,x1,y0,y1,f,s:ss/a,h:(Math.atan2(sn,cs)*180/Math.PI+360)%360}}
+ if(!b)return null;
+ const w=(b.x1-b.x0+1)/W,h=(b.y1-b.y0+1)/H,nm=cname(b.h);
+ return{type:'pop',label:'Zoom in on the '+nm+' burst of color (a flower?)',short:nm+' color',score:clamp(.45+b.s*.3+(b.f<.15?.2:0)),rect:{x:b.x0/W,y:b.y0/H,w,h},zoom:clamp(.4/Math.max(w,h),1,4)}
+}
+function refl(g,W,H){
+ let bm=99,br=0;
+ for(let r=Math.floor(H*.35);r<=Math.floor(H*.7);r+=2){const K=Math.min(r,H-r-1,Math.floor(H*.25));if(K<6)continue;let s=0,dt=0,cn=0;
+  for(let k=2;k<=K;k+=2)for(let xx=0;xx<W;xx+=3){s+=Math.abs(g[(r-k)*W+xx]-g[(r+k)*W+xx]);dt+=Math.abs(g[(r-k)*W+xx]-g[(r-k+1)*W+xx]);cn++}
+  s/=cn;dt/=cn;if(dt>4&&s<bm){bm=s;br=r}}
+ if(bm>16)return null;
+ return{type:'refl',label:'Possible reflection: get low and put the waterline mid-frame',short:'reflection',score:clamp(.5+(16-bm)/32),rect:{x:.05,y:clamp(br/H-.12,0,.76),w:.9,h:.24},zoom:1}
+}
+
+const SUBJ=[['a flower','flower','Zoom in on the flower','close'],['a leaf or plant close up','plant','Fill the frame with the plant detail','close'],['a water reflection','reflection','Get low and put the waterline mid-frame','water'],['a puddle','puddle','Get low and shoot the reflection in the puddle','water'],['a lake or river','water','Include the shoreline and keep the horizon level','water'],['a person','person','Put them on a third and leave space where they look','person'],['a dog or cat','pet','Get down to their eye level','person'],['a bird','bird','Zoom in and focus on the eye','close'],['a sunset sky','sunset','Put the horizon low and let the sky fill the frame','wide'],['mountains','mountains','Keep the horizon level and add foreground interest','wide'],['a city skyline','skyline','Keep the horizon level and verticals straight','wide'],['an interesting building','building','Stand square on and keep vertical lines straight','wide'],['a tree','tree','Frame it on a third with open sky behind it','wide'],['food on a table','food','Shoot from slightly above in soft light','close'],['a street scene','street','Use the lines of the road to lead the eye','wide'],['a cozy interior','room','Keep walls straight and use window light','wide']];
+function nrm(a){let s=0;for(let i=0;i<a.length;i++)s+=a[i]*a[i];s=Math.sqrt(s)||1;const o=new Float32Array(a.length);for(let i=0;i<a.length;i++)o[i]=a[i]/s;return o}
+async function loadAI(){
+ try{
+  const T=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1'),id='Xenova/clip-vit-base-patch32',F={},o={dtype:'q8',progress_callback:p=>{if(p.status==='progress'){F[p.file]=p.loaded;dlMB=Math.round(Object.values(F).reduce((a,b)=>a+b,0)/1e6)}}};
+  const tok=await T.AutoTokenizer.from_pretrained(id),tm=await T.CLIPTextModelWithProjection.from_pretrained(id,o);
+  const P=SUBJ.map(s=>'a beautiful professional photo of '+s[0]).concat(['a boring dull empty photo','a messy cluttered blurry photo']);
+  const te=(await tm(tok(P,{padding:true,truncation:true}))).text_embeds,D=te.dims[1],E=new Float32Array(P.length*D);
+  for(let i=0;i<P.length;i++)E.set(nrm(te.data.slice(i*D,(i+1)*D)),i*D);
+  const proc=await T.AutoProcessor.from_pretrained(id),vm=await T.CLIPVisionModelWithProjection.from_pretrained(id,o);
+  AI={T,proc,vm,E,D,n:P.length};
+ }catch(e){aiErr=(e&&e.message||'error').slice(0,60)}
+}
+async function embed(cv){const im=await AI.T.RawImage.fromCanvas(cv),{image_embeds}=await AI.vm(await AI.proc(im));return nrm(image_embeds.data)}
+function rank(e){const L=[];for(let i=0;i<AI.n;i++){let s=0;for(let k=0;k<AI.D;k++)s+=e[k]*AI.E[i*AI.D+k];L.push(100*s)}
+ const mx=Math.max(...L),ex=L.map(l=>Math.exp(l-mx)),z=ex.reduce((a,b)=>a+b,0),p=ex.map(q=>q/z),S=SUBJ.length;let B=0,bi=0;
+ for(let i=0;i<S;i++){B+=p[i];if(p[i]>p[bi])bi=i}return{p,bi,app:B/(B+3*(p[S]+p[S+1])),conf:p[bi]/B}}
+function view(zf){const[sx,sy,sw,sh]=crop(),W=224,H=Math.round(224*sh/sw),cv=document.createElement('canvas'),f=1/zf;cv.width=W;cv.height=H;cv.getContext('2d').drawImage(v,sx+sw*(1-f)/2,sy+sh*(1-f)/2,sw*f,sh*f,0,0,W,H);return cv}
+async function aiSample(){
+ aiBusy=true;
+ try{
+  const h0=hdg,p0=pit,th=thumb(),cx=gCx,cy=gCy,pp=gPop,rf=gRef;
+  const a=rank(await embed(view(1))),b=rank(await embed(view(2))),i=a.bi,S=SUBJ[i];
+  const score=a.app*(.5+.5*a.conf);let zm=b.p[i]>a.p[i]*1.3?2:1,rect;
+  if(S[3]==='water'){rect=rf?rf.rect:{x:.05,y:.38,w:.9,h:.24};zm=1}
+  else if(S[3]==='close'&&pp){rect=pp.rect;zm=Math.max(zm,pp.zoom)}
+  else rect={x:clamp(cx-.15,0,.7),y:clamp(cy-.15,0,.7),w:.3,h:.3};
+  const bx=$('box');bx.hidden=false;bx.style.left=(rect.x+rect.w/2)*100+'%';bx.style.top=(rect.y+rect.h/2)*100+'%';bx.style.width=rect.w*100+'%';bx.style.height=rect.h*100+'%';bx.textContent=S[1]+' '+Math.round(score*100);
+  if(score>.25)add({type:S[3]==='water'?'refl':'ai',short:S[1],tip:S[2],label:S[2]+' · AI score '+Math.round(score*100),score,rect,zoom:zm},h0,p0,th);
+ }catch(e){aiErr=(e&&e.message||'error').slice(0,60);AI=null}
+ finally{aiBusy=false}
+}
+async function aiLive(){aiBusy=true;try{aiNow=rank(await embed(view(1))).app}catch(e){}finally{aiBusy=false}}
+function analyze(){
+ if(!v.videoWidth||mode==='pick')return;
+ const[sx,sy,sw,sh,cw,ch]=crop(),W=96,H=Math.round(W*ch/cw);
+ c.width=W;c.height=H;x.drawImage(v,sx,sy,sw,sh,0,0,W,H);
+ const d=x.getImageData(0,0,W,H).data,n=W*H,g=new Float32Array(n),hs=new Float32Array(n*3);let sum=0,dk=0,br=0;
+ for(let i=0;i<n;i++){const l=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];g[i]=l;sum+=l;if(l<15)dk++;if(l>240)br++;const q=hsv(d[i*4],d[i*4+1],d[i*4+2]);hs[i*3]=q[0];hs[i*3+1]=q[1];hs[i*3+2]=q[2]}
+ const m=sum/n;let lv=0,lc=0,wx=0,wy=0,ws=0;
+ for(let yy=1;yy<H-1;yy++)for(let xx=1;xx<W-1;xx++){const i=yy*W+xx,lap=4*g[i]-g[i-1]-g[i+1]-g[i-W]-g[i+W];lv+=lap*lap;lc++;const mg=Math.abs(g[i+1]-g[i-1])+Math.abs(g[i+W]-g[i-W]);wx+=mg*mg*xx;wy+=mg*mg*yy;ws+=mg*mg}
+ lv/=lc;let md=0;if(prev&&prev.length===n){for(let i=0;i<n;i+=3)md+=Math.abs(g[i]-prev[i]);md/=n/3}prev=g;
+ const cx=ws>0?wx/ws/W:.5,cy=ws>0?wy/ws/H:.5;
+ if(mode==='scan'){
+  gCx=cx;gCy=cy;gPop=pop(hs,W,H);gRef=refl(g,W,H);
+  $('hint').textContent=AI?'Pan slowly. Pause on what looks good.':aiErr?'AI didn’t load ('+aiErr+'). Using basic guessing.':'Downloading AI, first time only: '+dlMB+' MB';
+  if(AI){if(!aiBusy&&md<8&&Date.now()-aiLast>900){aiLast=Date.now();aiSample()}$('cnt').textContent=C.length+' spots found';return}
+  if(!aiErr){$('cnt').textContent='Loading AI…';return}
+  const L=[gPop,gRef].filter(Boolean);
+  if(!L.length&&lv>15)L.push({type:'detail',label:'Close-up on this interesting texture',short:'detail',score:.4,rect:{x:clamp(cx-.15,0,.7),y:clamp(cy-.15,0,.7),w:.3,h:.3},zoom:2});
+  const t=Date.now(),best=L.sort((a,b)=>b.score-a.score)[0],bx=$('box');
+  if(best){bx.hidden=false;bx.style.left=(best.rect.x+best.rect.w/2)*100+'%';bx.style.top=(best.rect.y+best.rect.h/2)*100+'%';bx.style.width=best.rect.w*100+'%';bx.style.height=best.rect.h*100+'%';bx.textContent=best.short}else bx.hidden=true;
+  if(md<8&&t-lastS>450){L.forEach(add);lastS=t}
+  $('cnt').textContent=C.length+' spots found';return;
+ }
+ /* guide: quality + navigation */
+ const exp=clamp(1-Math.abs(m-120)/100-(dk+br)/n*1.5),sharp=1-Math.exp(-lv/40),steady=clamp(1-md/12);
+ let bd=0,comp=.5;if(cand.type!=='refl'){let t=[1/3,1/3],q=9;for(const p of[[1/3,1/3],[2/3,1/3],[1/3,2/3],[2/3,2/3]]){const e=Math.hypot(p[0]-cx,p[1]-cy);if(e<q){q=e;t=p}}bd=q;comp=1-clamp(q/.3)}
+ const parts=[[exp,.25],[sharp,.2],[steady,.15]];if(cand.type!=='refl')parts.push([comp,.25]);if(tilt!==null)parts.push([clamp(1-Math.abs(tilt)/(cand.type==='refl'?4:8)),cand.type==='refl'?.3:.15]);
+ const score=Math.round(100*parts.reduce((a,p)=>a+p[0]*p[1],0)/parts.reduce((a,p)=>a+p[1],0));cur=score;
+ let q;
+ if(md>10)q='Hold steady';else if(m<55||dk/n>.5)q='Too dark. Find more light';else if(m>205||br/n>.4)q='Too bright. Angle away from the light';
+ else if(tilt!==null&&Math.abs(tilt)>(cand.type==='refl'?3:4))q='Level the phone ('+Math.abs(tilt).toFixed(0)+'° off)';
+ else if(sharp<.3)q='Soft focus. Hold still or move closer';else q=score>=75?'Great frame. Capture it!':'Almost there';
+ const rc=cand.rect,ccx=rc.x+rc.w/2,ccy=rc.y+rc.h/2,pin=$('pin'),bx=$('box'),ax=$('axis'),gh=$('ghost');
+ let hint,nav=null;
+ if(hdg!=null&&cand.h!=null){const dH=dAng(cand.h+(ccx-.5)*45,hdg),dP=cand.p-(ccy-.5)*60-pit,fw=45/zoomD,fh=60/zoomD;nav={dH,dP,sx:.5+dH/fw,sy:.5-dP/fh,ok:Math.abs(dH)<6&&Math.abs(dP)<8}}
+ gh.hidden=!!nav;if(!nav){gh.src=cand.thumb;hint='Line the live view up with the faded photo of the '+cand.short}
+ else{
+  const px=clamp(nav.sx,.07,.93),py=clamp(nav.sy,.14,.86),off=px!==nav.sx||py!==nav.sy;
+  pin.hidden=false;pin.style.left=px*100+'%';pin.style.top=py*100+'%';pin.style.borderColor=nav.ok?'var(--ok)':'var(--warn)';pin.style.color=pin.style.borderColor;
+  pin.textContent=off?'➤':'';pin.style.transform=off?'rotate('+(Math.atan2(nav.sx-.5,-(nav.sy-.5))*180/Math.PI-90)+'deg)':'none';
+  ax.hidden=!(cand.type==='refl'&&!off);if(!ax.hidden)ax.style.top=py*100+'%';
+  bx.hidden=!(nav.ok&&cand.zoom>zoomD*1.15);if(!bx.hidden){bx.style.left=px*100+'%';bx.style.top=py*100+'%';bx.style.width=100*zoomD/cand.zoom+'%';bx.style.height=100*zoomD/cand.zoom+'%';bx.textContent='zoom in to here'}
+  if(!nav.ok){hint=Math.abs(nav.dH)*1.3>Math.abs(nav.dP)?'Turn '+(nav.dH>0?'right':'left')+' toward the '+cand.short:'Tilt '+(nav.dP>0?'up':'down')+' toward the '+cand.short}
+  else hint=cand.zoom>zoomD*1.15?'Zoom in ~'+cand.zoom.toFixed(1)+'× on the '+cand.short:(cand.tip&&(q.startsWith('Great')||q==='Almost there'))?cand.tip:(cand.type==='refl'&&!cand.tip)?'Crouch low, level the phone, waterline mid-frame':q;
+  if(nav.ok&&md>10)hint=q;
+ }
+ const col=score>=75?'var(--ok)':score>=50?'var(--warn)':'var(--bad)';
+ $('ring').style.background='conic-gradient('+col+' '+score*3.6+'deg,#333 0)';$('sc').textContent=score;$('hint').textContent=hint;
+ $('chips').textContent='Light '+Math.round(exp*100)+' · Sharp '+Math.round(sharp*100)+(cand.type!=='refl'?' · Frame '+Math.round(comp*100):'')+(tilt!==null?' · Level '+(Math.abs(tilt)<=2?'✓':Math.abs(tilt).toFixed(0)+'°'):'')+(aiNow!=null?' · AI '+Math.round(aiNow*100):'');
+ if(AI&&!aiBusy&&Date.now()-aiLast>1500){aiLast=Date.now();aiLive()}
+}
+function shot(){
+ if(!v.videoWidth)return;
+ const[sx,sy,sw,sh]=crop(),k=Math.min(1,1920/sw),o=document.createElement('canvas');o.width=sw*k;o.height=sh*k;
+ o.getContext('2d').drawImage(v,sx,sy,sw,sh,0,0,o.width,o.height);const s=cur;
+ o.toBlob(b=>{shots.push({u:URL.createObjectURL(b),s});render()},'image/jpeg',.92);
+ const f=$('flash');f.style.transition='none';f.style.opacity=.8;requestAnimationFrame(()=>{f.style.transition='opacity .35s';f.style.opacity=0});
+}
+function render(){
+ const best=Math.max(...shots.map(s=>s.s)),box=$('thumbs');box.innerHTML='';
+ shots.slice(-5).forEach(s=>{const d=document.createElement('div');d.style.backgroundImage='url('+s.u+')';if(s.s===best)d.className='best';
+  d.innerHTML='<i>'+(s.s===best?'★ ':'')+s.s+'</i>';d.onclick=()=>{$('vimg').src=s.u;$('vinfo').textContent='Score '+s.s;$('view').hidden=false};box.appendChild(d)});
+}
+$('vclose').onclick=()=>$('view').hidden=true;
+</script></body></html>
